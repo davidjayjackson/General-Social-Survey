@@ -1,0 +1,57 @@
+---
+title: "General Social Survey"
+author: "David Jackson"
+date: "11/15/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(haven)
+library(scales)
+library(janitor)
+```
+
+### Import SPSS data
+
+```{r}
+rm(list =ls())
+# social_survey <- read_sav("./GSS7218_R3.sav")
+```
+```{r}
+# social_survey <- janitor::clean_names(social_survey)
+# social_survey <- janitor:: remove_empty(social_survey,which =c("rows","cols"))
+```
+```{r}
+# A <- head(social_survey,1)
+# write.csv(A,file="socialsurvey.csv",row.names = F)
+```
+```{r}
+# survey_data <- read_csv("./socialsurvey.csv")
+```
+
+```{r}
+survey_data %>% select(year,agewed) %>% group_by(year) %>%
+  summarise(avg_age = mean(agewed,na.rm=T) ) %>%
+  ggplot(aes(x=year,y=avg_age)) + geom_line() +
+  labs(title = "Average Age Wed")
+
+```
+```{r}
+survey_data %>% filter(educ >=13) %>% select(year,educ) %>% count(year,educ) %>%
+  ggplot(aes(x=year,y=n)) + geom_line(aes(col= factor(educ),group = educ)) + labs(title = "Number of College attended  by Year and Grade Completed")
+
+```
+
+### Number of People completing 12 grade
+
+
+```{r}
+survey_data %>% filter(educ ==12) %>% select(year,educ) %>% count(year,educ) %>%
+  ggplot(aes(x=year,y=n)) + geom_line(aes(col= factor(educ),group = educ)) + labs(title = "Number of Respondants Who Completed High School by Year") +
+  geom_smooth(aes(x=year,y=n))
+```
+
+
+
