@@ -17,15 +17,15 @@ library(janitor)
 
 ```{r}
 rm(list =ls())
-# social_survey <- read_sav("./GSS7218_R3.sav")
+social_survey <- read_sav("./GSS7218_R3.sav") 
 ```
 ```{r}
-# social_survey <- janitor::clean_names(social_survey)
-# social_survey <- janitor:: remove_empty(social_survey,which =c("rows","cols"))
+social_survey <- janitor::clean_names(social_survey) 
+social_survey <- janitor:: remove_empty(social_survey,which =c("rows","cols"))
 ```
 ```{r}
 # A <- head(social_survey,1)
-# write.csv(A,file="socialsurvey.csv",row.names = F)
+write.csv(A,file="socialsurvey.csv",row.names = F)
 ```
 ```{r}
 # survey_data <- read_csv("./socialsurvey.csv")
@@ -40,7 +40,7 @@ survey_data %>% select(year,agewed) %>% group_by(year) %>%
 ```
 ```{r}
 survey_data %>% filter(educ >=13) %>% select(year,educ) %>% count(year,educ) %>%
-  ggplot(aes(x=year,y=n)) + geom_line(aes(col= factor(educ),group = educ)) + labs(title = "Number of College attended  by Year and Grade Completed")
+  ggplot(aes(x=year,y=n)) + geom_line(aes(col= factor(educ),group = educ)) + labs(title = "Number of College attended \n by Year and Grade Completed")
 
 ```
 
@@ -53,5 +53,51 @@ survey_data %>% filter(educ ==12) %>% select(year,educ) %>% count(year,educ) %>%
   geom_smooth(aes(x=year,y=n))
 ```
 
+## Count of respondents by Year
 
+```{r}
+survey_data %>% count(year) %>%
+  ggplot(aes(x=year,y=n)) + geom_line()
+```
 
+### Race,Income,Sex,Age and PartyId
+
+```{r}
+df <- social_survey %>%select(year,income,race,sex,age,partyid)
+
+```
+```{r}
+df %>% group_by(year,race) %>% 
+  summarise(Count = n()) %>%
+  ggplot() + geom_line(aes(x=year,y=Count)) +
+  facet_wrap(~race) +
+  labs(title = "Number of Respondents by Race (White,Black, Other)")
+```
+
+### By Sex
+
+```{r}
+df %>% group_by(year,sex) %>% 
+  summarise(Count = n()) %>%
+  ggplot() + geom_line(aes(x=year,y=Count)) +
+  facet_wrap(~sex) +
+  labs(title = "Number of Respondents by Sex")
+```
+
+### By Age
+
+```{r}
+df %>% group_by(year,age) %>% 
+  summarise(Count = n()) %>%
+  ggplot() + geom_line(aes(x=year,y=Count)) +
+  facet_wrap(~age) +
+  labs(title = "Number of Respondents by Age")
+```
+
+```{r}
+df %>% group_by(year,partyid) %>% 
+  summarise(Count = n()) %>%
+  ggplot() + geom_line(aes(x=year,y=Count)) +
+  facet_wrap(~partyid) +
+  labs(title = "Number of Replies by Political Party")
+```
