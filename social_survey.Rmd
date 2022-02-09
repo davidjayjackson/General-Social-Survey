@@ -1,7 +1,7 @@
 ---
 title: "General Social Survey"
 author: "David Jackson"
-date: "11/15/2021"
+date: "`Sys.Date()`"
 output: html_document
 ---
 
@@ -11,6 +11,7 @@ library(tidyverse)
 library(haven)
 library(scales)
 library(janitor)
+library(writexl)
 ```
 
 ### Import SPSS data
@@ -25,21 +26,23 @@ social_survey <- janitor:: remove_empty(social_survey,which =c("rows","cols"))
 ```
 ```{r}
 # A <- head(social_survey,1)
-write.csv(A,file="socialsurvey.csv",row.names = F)
+# write.csv(A,file="socialsurvey.csv",row.names = F)
+
+# write_xlsx(list(GSS=social_survey))
 ```
 ```{r}
-# survey_data <- read_csv("./socialsurvey.csv")
+# social_survey <- read_csv("./socialsurvey.csv")
 ```
 
 ```{r}
-survey_data %>% select(year,agewed) %>% group_by(year) %>%
+social_survey %>% select(year,agewed) %>% group_by(year) %>%
   summarise(avg_age = mean(agewed,na.rm=T) ) %>%
   ggplot(aes(x=year,y=avg_age)) + geom_line() +
   labs(title = "Average Age Wed")
 
 ```
 ```{r}
-survey_data %>% filter(educ >=13) %>% select(year,educ) %>% count(year,educ) %>%
+social_survey %>% filter(educ >=13) %>% select(year,educ) %>% count(year,educ) %>%
   ggplot(aes(x=year,y=n)) + geom_line(aes(col= factor(educ),group = educ)) + labs(title = "Number of College attended \n by Year and Grade Completed")
 
 ```
@@ -48,7 +51,7 @@ survey_data %>% filter(educ >=13) %>% select(year,educ) %>% count(year,educ) %>%
 
 
 ```{r}
-survey_data %>% filter(educ ==12) %>% select(year,educ) %>% count(year,educ) %>%
+social_survey %>% filter(educ ==12) %>% select(year,educ) %>% count(year,educ) %>%
   ggplot(aes(x=year,y=n)) + geom_line(aes(col= factor(educ),group = educ)) + labs(title = "Number of Respondants Who Completed High School by Year") +
   geom_smooth(aes(x=year,y=n))
 ```
@@ -56,14 +59,22 @@ survey_data %>% filter(educ ==12) %>% select(year,educ) %>% count(year,educ) %>%
 ## Count of respondents by Year
 
 ```{r}
-survey_data %>% count(year) %>%
-  ggplot(aes(x=year,y=n)) + geom_line()
+social_survey %>% count(year) %>%
+  ggplot(aes(x=year,y=n)) + geom_line() +
+  labs(title = "Number of Respondents by Year",
+       x="Year",y="Number of Respondents")
 ```
 
 ### Race,Income,Sex,Age and PartyId
 
 ```{r}
-df <- social_survey %>%select(year,income,race,sex,age,partyid)
+social_survey$race <- as.factor(social_survey$race)
+df <- social_survey %>%select(year,income,race,sex,age,partyid) 
+
+```
+```{r}
+ df$race <- recode(df$race,`1` = "White", `2` = "Other",`3` = "Other"
+    )
 
 ```
 ```{r}
@@ -71,7 +82,7 @@ df %>% group_by(year,race) %>%
   summarise(Count = n()) %>%
   ggplot() + geom_line(aes(x=year,y=Count)) +
   facet_wrap(~race) +
-  labs(title = "Number of Respondents by Race (White,Black, Other)")
+  labs(title = "Number of Respondents by Race (White,Not White)")
 ```
 
 ### By Sex
