@@ -18,11 +18,11 @@ library(writexl)
 
 ```{r}
 rm(list =ls())
-social_survey <- read_sav("./GSS7218_R3.sav") 
 ```
 ```{r}
-social_survey <- janitor::clean_names(social_survey) 
-social_survey <- janitor:: remove_empty(social_survey,which =c("rows","cols"))
+data(gss_all)
+gss_all <- janitor::clean_names(gss_all) 
+gss_all <- janitor:: remove_empty(gss_all,which =c("rows","cols"))
 ```
 ```{r}
 # A <- head(social_survey,1)

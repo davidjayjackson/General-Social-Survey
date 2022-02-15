@@ -1,6 +1,9 @@
 library(DBI)
 library(odbc)
 library(tidyverse)
+library(gssr)
+## Install GSSR Package
+# remotes::install_github("kjhealy/gssr")
 
 ## https://db.rstudio.com/databases/microsoft-sql-server/
 con <- DBI::dbConnect(odbc::odbc(), 
@@ -9,10 +12,19 @@ con <- DBI::dbConnect(odbc::odbc(),
                       Database = "GSS", 
                       Trusted_Connection = "True")
 
-dbListTables(con)
+## Load GSS Docs
+
+data(gss_doc)
+gss_toc <- gss_doc %>% select(id,description)
+dbWriteTable(con, "gss_toc",gss_toc ,overwrite=TRUE)
+
+# survey_long <- social_survey %>% pivot_longer(cols = WRKSTAT:SPOCCINDV)
+
+## Begin Building table for import to SQL Server
 
 t1 <- social_survey %>% select(1:1000)
 dbWriteTable(con, "t1",t1 ,overwrite=TRUE)
+
 
 
 ## Break down Survey into tabl of 1000 columns (+2)

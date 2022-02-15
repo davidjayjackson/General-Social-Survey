@@ -1,0 +1,146 @@
+---
+title: "General Social Survey (Part 1)"
+author: "David Jackson"
+date: "2/11/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(DBI)
+library(odbc)
+library(tidyverse)
+library(stringr)
+library(gssr)
+library(janitor)
+library(lubridate)
+library(tidytext)
+library(wordcloud)
+```
+
+## General Social Survey (1972 - 2021)
+
+"Since 1972, the General Social Survey (GSS) has provided politicians, policymakers, and scholars with a clear and unbiased perspective on what Americans think and feel about such issues as national spending priorities, crime and punishment, intergroup relations, and confidence in institutions." (https://gss.norc.org/)
+
+## Import Data and Codebook
+
+```{r }
+rm(list = ls())
+data(gss_all) # Grab data
+data(gss_doc) # Grab code book
+data(stop_words)
+gss_all <- gss_all %>% janitor::clean_names()
+
+```
+
+## Begin Text Mining and Sentiment Analysis
+
+```{r}
+
+gss_tokens <- gss_doc %>% tidytext:: unnest_tokens(description,text,to_lower = TRUE)
+```
+```{r}
+
+stop_words <- stop_words %>% rename(description = word)
+```
+```{r}
+gss_tokens_clean <-  gss_tokens %>% anti_join(stop_words)
+```
+
+### Tokens with stop words
+
+```{r}
+gss_tokens %>% count(description,sort =T)
+```
+
+### Tokens without stop words
+
+```{r}
+gss_tokens_clean <-  gss_tokens %>% anti_join(stop_words)
+```
+
+```{r}
+gss_tokens_clean %>% count(description,sort =T) %>% top_n(25) %>%
+  ggplot() + geom_col(aes(x=reorder(description,n),y=n)) +
+  coord_flip() + labs(title ="Top 25 Token / Words",x="Words / Tokens",
+                      y="Word Counts")
+
+```
+
+### Unnest Two Ngrams
+
+
+```{r}
+
+gss_sentences <- gss_doc %>% 
+  tidytext:: unnest_tokens(description,text,to_lower = TRUE,token = "ngrams")
+```
+
+```{r}
+gss_sentences_clean <-  gss_sentences %>% anti_join(stop_words) %>%
+  with(wordcloud(description, n, max.words = 100))
+  
+```
+
+```{r}
+gss_sentences_clean %>%  str_extract(description,"[a-z]+") %>% count(description,sort =T)
+
+```
+
+### Pull Decriptions containing sports, religion, politics
+
+```{r}
+con <- DBI::dbConnect(odbc::odbc(), 
+                      Driver = "SQL Server", 
+                      Server = "localhost\\SQLEXPRESS", 
+                      Database = "GSS", 
+                      Trusted_Connection = "True")
+
+```
+
+
+```{r}
+gss_test <- gss_doc %>% filter(str_detect(string = description, pattern = c("sport","relig","polit")))
+```
+```{r}
+gss_test <- gss_test %>% select(id,description)
+dbWriteTable(con, "gss_test",gss_test ,overwrite=TRUE)
+```
+```{r}
+gss_vars <- gss_get_marginals(varnames =gss_test$id,data = gss_doc,margin = marginals) %>%
+  filter(!label %in% c("Total","DK","IAP"))
+```
+
+### Uplead data in 1000 column chucks
+
+```{r}
+t1 <- gss_all %>% select(1:1000)
+dbWriteTable(con, "t1",t1 ,overwrite=TRUE)
+
+## Break down Survey into tabl of 1000 columns (+2)
+t2 <- gss_all %>% select(1,2,1001:2000)
+dbWriteTable(con, "t2",t2 ,overwrite=TRUE)
+##
+```
+```{r}
+t3 <- gss_all %>% select(1,2,2001:3000)
+dbWriteTable(con, "t3",t3 ,overwrite=TRUE)
+##
+t4 <- gss_all %>% select(1,2,3000:3999)
+dbWriteTable(con, "t4",t4 ,overwrite=TRUE)
+##
+```
+
+```{r}
+t5 <- gss_all %>% select(1,2,4000:4999)
+dbWriteTable(con, "t5",t5 ,overwrite=TRUE)
+##
+t6 <- gss_all %>% select(1,2,5000:5999)
+dbWriteTable(con, "t6",t6 ,overwrite=TRUE)
+##
+t7 <- gss_all %>% select(1,2,6000:6110)
+dbWriteTable(con, "t7",t7 ,overwrite=TRUE)
+##
+
+```
+
