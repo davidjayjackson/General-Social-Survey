@@ -1,0 +1,85 @@
+---
+title: "GSS and Education"
+author: "David Jackson"
+date: "2/15/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(scales)
+library(forecast)
+# library(haven)
+library(stringr)
+library(gssr)
+```
+
+## Load GSS Data
+
+```{r}
+rm(list = ls())
+data(gss_all) # survey data
+data(gss_doc) # code book
+gss_all <- gss_all %>% janitor::clean_names()
+education <- gss_all %>% select(year,id,race,sex,partyid,educ,age)
+
+
+write.csv(education,file="gss_education.csv",row.names = F)
+gss_education <- read_csv("./gss_education.csv")
+```
+```{r}
+race_lookup <- gss_get_marginals(varnames = "race", data = gss_doc, margin = marginals)
+education_lookup <- gss_get_marginals(varnames = "education", data = gss_doc, margin = marginals)
+
+```
+```{r}
+political_party <- gss_get_marginals(varnames = "partyid", data = gss_doc, margin = marginals) %>% select(value,label) %>% rename(partyid = value) %>% filter(label !="DK",label !="Total")
+```
+
+
+```{r}
+gss_education$race <- recode(gss_education$race,`1`="White",`2`="Black",`3` = "Other")
+
+gss_education$sex <- recode(gss_education$sex,`1`="Male",`2`="Female")
+
+```
+
+
+### Plot Number of Surveys Per Year 
+
+```{r}
+gss_education %>% count(year,sort=T) %>%
+  ggplot() + geom_area(aes(x=year,y=n)) +
+  labs(title ="Number of Surveys Completed Per Year",
+       x="Year of Completion",y="Number of Surveys") +
+  scale_y_continuous(labels = comma)
+```
+
+### Number of Surveys by Race and Year
+
+
+```{r}
+gss_education %>% count(year,race)  %>%
+  ggplot() + geom_line(aes(x=year,y=n,col=factor(race)),lwd=1) +
+  labs(title ="Count of Surveys by Race",x="Year of Survey",y="Count of Survey") +
+  scale_y_continuous(labels = comma)
+  
+```
+
+### Number of Surveys by Race and Year
+
+```{r}
+gss_education %>% count(year,sex)  %>%
+  ggplot() + geom_line(aes(x=year,y=n,col=factor(sex)),lwd=1) +
+  labs(title ="Count of Surveys by Sex",x="Year of Survey",y="Count of Survey") +
+  scale_y_continuous(labels = comma)
+  
+```
+
+### Histogram of Age Groups
+
+```{r}
+ggplot(gss_education) + geom_histogram(aes(x=age),bins=20)
+```
+
