@@ -108,7 +108,7 @@ dbWriteTable(con, "gss_test",gss_test ,overwrite=TRUE)
 ```
 ```{r}
 gss_vars <- gss_get_marginals(varnames =gss_test$id,data = gss_doc,margin = marginals) %>%
-  filter(!label %in% c("Total","DK","IAP"))
+  filter(!label %in% c("Total","DK","IAP")) 
 ```
 
 ### Uplead data in 1000 column chucks

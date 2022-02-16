@@ -2,7 +2,7 @@
 title: "GSS and Education"
 author: "David Jackson"
 date: "2/15/2022"
-output: html_document
+output: pdf_document
 ---
 
 ```{r setup, include=FALSE}
@@ -30,20 +30,30 @@ gss_education <- read_csv("./gss_education.csv")
 ```
 ```{r}
 race_lookup <- gss_get_marginals(varnames = "race", data = gss_doc, margin = marginals)
-education_lookup <- gss_get_marginals(varnames = "education", data = gss_doc, margin = marginals)
+```
+```{r}
+education_lookup <- gss_get_marginals(varnames = "educ", data = gss_doc, margin = marginals)
 
 ```
 ```{r}
 political_party <- gss_get_marginals(varnames = "partyid", data = gss_doc, margin = marginals) %>% select(value,label) %>% rename(partyid = value) %>% filter(label !="DK",label !="Total")
+
 ```
-
-
 ```{r}
 gss_education$race <- recode(gss_education$race,`1`="White",`2`="Black",`3` = "Other")
 
 gss_education$sex <- recode(gss_education$sex,`1`="Male",`2`="Female")
 
 ```
+```{r}
+## Join on partyid
+political_party$partyid <- as.numeric(political_party$partyid)
+gss_cleaned <- gss_education %>% inner_join(political_party) %>%
+  select(-partyid)
+```
+
+
+
 
 
 ### Plot Number of Surveys Per Year 
@@ -67,7 +77,7 @@ gss_education %>% count(year,race)  %>%
   
 ```
 
-### Number of Surveys by Race and Year
+### Number of Surveys by Sex and Year
 
 ```{r}
 gss_education %>% count(year,sex)  %>%
@@ -83,3 +93,63 @@ gss_education %>% count(year,sex)  %>%
 ggplot(gss_education) + geom_histogram(aes(x=age),bins=20)
 ```
 
+### Count by Political Party
+
+```{r}
+gss_cleaned$label <- as.factor(gss_cleaned$label)
+gss_cleaned_counts <- gss_cleaned %>% count(year,label, sort=T)
+```
+
+```{r}
+ggplot(gss_cleaned_counts) + geom_col(aes(x=year,y=n,group=label,fill=label))
+```
+```{r}
+ggplot(gss_cleaned_counts) + geom_line(aes(x=year,y=n,group=label,col=label),lwd=1)
+```
+```{r}
+ggplot(gss_cleaned_counts) + geom_line(aes(x=year,y=n,col=label),lwd=1) +
+  facet_wrap(~label,scales='free_y') + theme(legend.position = "none") +
+  labs(title = "Count of Surveys by Political Party",y="Count of Surveys")
+```
+
+## Count of People who completed six grade by Race
+
+```{r}
+gss_cleaned %>% filter(educ <=6) %>% count(year,race,sort=T) %>% ggplot() + geom_line(aes(x=year,y=n,group = race,col=race),lwd=1) +
+  labs(title ="Count of Respondents by Race",y="Count of Surveys")
+```
+```{r}
+gss_cleaned %>% filter(educ <=6) %>% count(year,race,sort=T) %>% ggplot() + geom_line(aes(x=year,y=n,col=race),lwd=1) + 
+  facet_wrap(~race) +
+  labs(title ="Count of Respondents by Race",y="Count of Surveys") + theme(legend.position = "none")
+```
+
+```{r}
+gss_cleaned %>% filter(educ ==6) %>% count(year,race,sort=T) %>% ggplot() + geom_line(aes(x=year,y=n,col=race),lwd=1) + 
+  facet_wrap(~race) +
+  labs(title ="Count of Respondents by Race",subtitle ="Who completed Sixth Grade",y="Count of Surveys") + theme(legend.position = "none")
+```
+```{r}
+gss_cleaned %>% filter(educ ==9) %>% count(year,race,sort=T) %>% ggplot() + geom_line(aes(x=year,y=n,col=race),lwd=1) + 
+  facet_wrap(~race) +
+  labs(title ="Count of Respondents by Race",subtitle ="Who completed Tenth Grade",y="Count of Surveys") + theme(legend.position = "none")
+```
+
+```{r}
+gss_cleaned %>% filter(educ ==12) %>% count(year,race,sort=T) %>% ggplot() + geom_line(aes(x=year,y=n,col=race),lwd=1) + 
+  facet_wrap(~race) +
+  labs(title ="Count of Respondents by Race",subtitle ="Who Graduated",y="Count of Surveys") + theme(legend.position = "none")
+```
+
+```{r}
+gss_cleaned %>% filter(educ ==13) %>% count(year,race,sort=T) %>% ggplot() + geom_line(aes(x=year,y=n,col=race),lwd=1) + 
+  facet_wrap(~race) +
+  labs(title ="Count of Respondents by Race",subtitle ="Who completed 1 year of college",y="Count of Surveys") + theme(legend.position = "none")
+```
+
+
+```{r}
+gss_cleaned %>% filter(educ ==16) %>% count(year,race,sort=T) %>% ggplot() + geom_line(aes(x=year,y=n,col=race),lwd=1) + 
+  facet_wrap(~race) +
+  labs(title ="Count of Respondents by Race",subtitle ="Who graduated from college",y="Count of Surveys") + theme(legend.position = "none")
+```
