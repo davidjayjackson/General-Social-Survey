@@ -1,0 +1,102 @@
+---
+title: 'GSS: Part 2'
+author: "David Jackson"
+date: "2/16/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(scales)
+library(forecast)
+library(stringr)
+library(gssr)
+```
+
+## R Markdown
+
+## Load GSS Data
+
+```{r}
+rm(list = ls())
+data(gss_all) # survey data
+data(gss_doc) # code book
+gss_all <- gss_all %>% janitor::clean_names()
+region_agewed  <- gss_all %>% select(year,id,race,sex,age,
+                                  agewed, region, relig, jew, conpresy)
+```
+```{r}
+write.csv(region_agewed,file="gss_agewed_jew.csv",row.names = F)
+gss_agewed_jew <- read_csv("./gss_agewed_jew.csv")
+```
+
+## Data Wranging
+
+
+```{r}
+gss_agewed_jew$sex <-recode(gss_agewed_jew$sex,`1` ="Male",`2` = "Female")
+
+gss_agewed_jew$race <- 
+recode(gss_agewed_jew$race,`1`="White",`2`="Black",`3` = "Other")
+```
+
+```{r}
+## Confidence in Press: Not Enough Data
+gss_agewed_jew$conpresy <-  recode(gss_agewed_jew$conpresy,`1`="COMPLETE CONFIDENCE",`2` ="COMPLETE CONFIDENCE",`3` = "COMPLETE CONFIDENCE",`4` = "Not Opion",
+                                   `5` = "LITTLE CONFIDENCE",
+                                    `6` = "NO CONFIDENCE",
+                                   `7`="NO CONFIDENCE")
+```
+
+```{r}
+agewed_lookup$value <- as.numeric(agewed_lookup$value)
+gss_region <- agewed_lookup %>% filter(variable =="region") %>%  select(value,label) %>% rename(region = value) %>%
+  inner_join(gss_agewed_jew)
+```
+
+```{r}
+# agewed_lookup$value <- as.numeric(agewed_lookup$value)
+gss_religion <- agewed_lookup %>% filter(variable =="jew") %>%  select(value,label) %>% rename(jew = value) %>%
+  inner_join(gss_region,by="jew") 
+```
+
+```{r}
+# agewed_lookup$value <- as.numeric(agewed_lookup$value)
+gss_religion <- agewed_lookup %>% filter(variable =="relig") %>%  select(value,label) %>% rename(relig = value) %>%
+  inner_join(gss_religion,by="relig") %>% rename(religion = label.x) 
+```
+
+## Grab Details about Variable
+```
+```{r}
+agewed_lookup <- gss_get_marginals(varnames = c("agewed","region","relig","jew","conpresy"), data = gss_doc, margin = marginals) %>% select(variable,value,label) %>% 
+  filter(label !="Total", label !="DK",label !="IAP") %>% na.omit()
+```
+
+## Average Age When Married
+
+```{r}
+
+gss_agewed_jew %>% select(race,year,agewed) %>% na.omit() %>%
+group_by(year,sex) %>% summarise(sum_age = mean(agewed)) %>%
+  ggplot() + geom_line(aes(x=year,y=sum_age,group = sex,col=factor(sex)),lwd=1) +
+  labs(title ="Average Age When  Married",x ="Survey Year"
+  ,y="Average Age Wed")
+```
+```{r}
+
+gss_agewed_jew %>% filter(race !="Other") %>% select(sex,race,year,agewed) %>% na.omit() %>%
+group_by(year,sex,race) %>% summarise(sum_age = mean(agewed)) %>%
+  ggplot() + geom_point(aes(x=year,y=sum_age,group = race,col=factor(race)),lwd=1) +
+  labs(title ="Average Age When  Married By Race and Sex",x ="Survey Year"
+  ,y="Average Age Wed") + facet_wrap(~sex) +
+  geom_smooth(aes(x=year,y=sum_age))
+```
+
+##  CONFIDENCE IN The PRESS
+
+```{r}
+gss_agewed_jew %>% count(conpresy,sort =T)
+```
+
